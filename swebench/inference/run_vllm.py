@@ -28,7 +28,11 @@ CONFIG = {
 
 def initialize_client(base) -> OpenAI:
     """OpenAI 클라이언트를 초기화합니다."""
-    return OpenAI(base_url=base, api_key=CONFIG["api_key"])
+    return OpenAI(
+        base_url=base,
+        api_key=CONFIG["api_key"],
+        timeout=1800
+    )
 
 
 def count_tokens(text: str, encoder: str = "o200k_base") -> int:
@@ -132,6 +136,7 @@ def generate(
                 try:
                     output = client.chat.completions.create(
                         model=model_name_or_path,
+                        reasoning_effort="high",
                         messages=[
                             {"role": "user", "content": instance["text"]}],
                         temperature=temperature,
@@ -170,6 +175,7 @@ def main(
     model_name_or_path,
     dataset_path,
     split,
+    index,
     temperature,
     top_p,
     output_dir,
@@ -203,11 +209,12 @@ def main(
         dataset_path=dataset_path,
         split=split
     )
+    subset = dataset.select(range(index, dataset.num_rows))
 
     with open(output_file, "a") as f:
         generate(
             client=client,
-            dataset=dataset,
+            dataset=subset,
             temperature=temperature,
             top_p=top_p,
             fileobj=f,
@@ -234,6 +241,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--split", type=str, default="test", help="Dataset split to use"
     )
+    parser.add_argument("--index", type=int, default=0, help="데이터셋 처리 시작 인덱스")
     parser.add_argument("--output_dir", type=str, default="./outputs")
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--top_p", type=float, default=1.0)
