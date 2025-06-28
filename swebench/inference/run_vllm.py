@@ -127,7 +127,7 @@ def generate(
                 f"Skipping instance {ix} with text length {len(instance['text'])} "
                 + f"as it exceeds the maximum token limit of {max_len}."
             )
-            content = None
+            output = None
             diff = None
         else:
             start = datetime.now()
@@ -159,12 +159,13 @@ def generate(
             )
 
             content = output.choices[0].message.content
+            output = output.to_dict()
             logger.info(content[:200])
             diff = extract_diff(content)
 
         res = {
             "instance_id": instance["instance_id"],
-            "full_output": content,
+            "full_output": output,
             "model_patch": diff,
             "model_name_or_path": model_name_or_path,
         }
